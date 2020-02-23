@@ -87,5 +87,26 @@ namespace Elastic.CommonSchema.Serilog.Tests
 			dict.Value.GetProperty("field_one").GetString().Should().Be("value1");
 			dict.Value.GetProperty("field_two").GetString().Should().Be("value2");
 		});
+
+		[Fact]
+		public void SeesMessageWithObjectProp() => TestLogger((logger, getLogEvents) =>
+		{
+			logger.Information("Info {@MyObj}", new { TestProp = "testing", Child = new { ChildProp = 3.3 } });
+
+			var logEvents = getLogEvents();
+			logEvents.Should().HaveCount(1);
+
+			var ecsEvents = ToEcsEvents(logEvents);
+
+			var (_, info) = ecsEvents.First();
+			info.Message.Should().Be("Info { TestProp: \"testing\", Child: { ChildProp: 3.3 } }");
+			info.Metadata.Should().ContainKey("my_obj");
+
+			
+			var json = info.Metadata["my_obj"] as JsonElement?;
+			json.Should().NotBeNull();
+			json.Value.GetProperty("test_prop").GetString().Should().Be("testing");
+			json.Value.GetProperty("child").GetProperty("child_prop").GetDouble().Should().Be(3.3);
+		});
 	}
 }

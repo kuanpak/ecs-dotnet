@@ -160,6 +160,12 @@ namespace Elastic.CommonSchema.Serilog
 				return sv.Value;
 			else if (propertyValue is DictionaryValue dv)
 				return dv.Elements.ToDictionary(keySelector: (kvp) => ToSnakeCase(kvp.Key.Value.ToString()), elementSelector: (kvp) => PropertyValueToObject(kvp.Value));
+			else if (propertyValue is StructureValue ov)
+			{
+				var dict = ov.Properties.ToDictionary(p => p.Name, p => PropertyValueToObject(p.Value));
+				if (ov.TypeTag != null) dict.Add("$type", ov.TypeTag);
+				return dict;
+			}
 			else
 				return propertyValue;
 		}
