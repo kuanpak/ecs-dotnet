@@ -143,19 +143,25 @@ namespace Elastic.CommonSchema.Serilog
 						continue;
 				}
 
-				if (logEventPropertyValue.Value is SequenceValue values)
-				{
-					dict.Add(ToSnakeCase(logEventPropertyValue.Key), values.Elements.Select(e => e.ToString()).ToArray());
-					continue;
-				}
-
-				if (logEventPropertyValue.Value is ScalarValue sv)
-					dict.Add(ToSnakeCase(logEventPropertyValue.Key), sv.Value);
-				else
-					dict.Add(ToSnakeCase(logEventPropertyValue.Key), logEventPropertyValue.Value);
+				dict.Add(ToSnakeCase(logEventPropertyValue.Key), PropertyValueToObject(logEventPropertyValue.Value));
 			}
 			if (dict.Count == 0) return null;
 			return dict;
+		}
+
+		private static object PropertyValueToObject(LogEventPropertyValue propertyValue)
+		{
+			if (propertyValue is SequenceValue values)
+			{
+				return values.Elements.Select(e => PropertyValueToObject(e)).ToArray();
+			}
+
+			if (propertyValue is ScalarValue sv)
+				return sv.Value;
+			else if (propertyValue is DictionaryValue dv)
+				return dv.Elements.ToDictionary(keySelector: (kvp) => ToSnakeCase(kvp.Key.Value.ToString()), elementSelector: (kvp) => PropertyValueToObject(kvp.Value));
+			else
+				return propertyValue;
 		}
 
 		private static string ToSnakeCase(string key) => key;
