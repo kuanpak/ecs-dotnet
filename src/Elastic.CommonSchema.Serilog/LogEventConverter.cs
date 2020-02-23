@@ -101,7 +101,10 @@ namespace Elastic.CommonSchema.Serilog
 
 		private static IDictionary<string, object> GetMetadata(LogEvent logEvent)
 		{
-			var dict = new Dictionary<string, object>();
+			var dict = new Dictionary<string, object>
+			{
+				{ ToSnakeCase("MessageTemplate"), logEvent.MessageTemplate.Text }
+			};
 
 			//TODO what does this do and where does it come from?
 			if (logEvent.Properties.TryGetValue("ActionPayload", out var actionPayload))
@@ -266,7 +269,7 @@ namespace Elastic.CommonSchema.Serilog
 				 : SpecialKeys.DefaultLogger ;
 
 			var log = new Log { Level = e.Level.ToString("F"), Logger = source};
-
+			
 			if (configuration.MapExceptions)
 			{
 				// TODO - walk stack trace for other information
@@ -355,6 +358,7 @@ namespace Elastic.CommonSchema.Serilog
 					fullText.WriteLine($"\tType: {exception.GetType()}");
 					fullText.WriteLine($"\tSource: {exception.TargetSite?.DeclaringType?.AssemblyQualifiedName}");
 					fullText.WriteLine($"\tMessage: {exception.Message}");
+					fullText.WriteLine($"\tTrace: {exception.StackTrace}");
 					fullText.WriteLine($"\tLocation: {frame.GetFileName()}");
 					fullText.WriteLine(
 						$"\tMethod: {frame.GetMethod()} ({frame.GetFileLineNumber()}, {frame.GetFileColumnNumber()})");
